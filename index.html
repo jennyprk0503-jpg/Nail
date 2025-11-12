@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nail Painting Interactive Experience</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Start Screen */
+        #startScreen {
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        #startScreen:hover {
+            transform: scale(1.05);
+        }
+
+        #startScreen h1 {
+            font-size: 3rem;
+            color: #ff6b9d;
+            margin-bottom: 2rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Hand Display */
+        .hand {
+            position: relative;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-end;
+            margin: 2rem 0;
+        }
+
+        .finger {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .nail {
+            width: 60px;
+            height: 80px;
+            background: #ffd1dc;
+            border: 3px solid #333;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nail.large {
+            width: 200px;
+            height: 250px;
+        }
+
+        .finger-segment {
+            width: 40px;
+            height: 60px;
+            background: #ffe4b5;
+            border: 2px solid #333;
+            border-radius: 10px;
+        }
+
+        .finger:nth-child(1) .finger-segment { height: 40px; }
+        .finger:nth-child(3) .finger-segment { height: 80px; }
+        .finger:nth-child(4) .finger-segment { height: 70px; }
+        .finger:nth-child(5) .finger-segment { height: 50px; }
+
+        /* Nail Shapes */
+        .nail.round {
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        }
+
+        .nail.square {
+            border-radius: 10px 10px 10px 10px;
+        }
+
+        .nail.oval {
+            border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%;
+        }
+
+        /* Pattern Overlays */
+        .nail-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pattern-dots {
+            background-image: radial-gradient(circle, var(--pattern-color, #fff) 20%, transparent 20%);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+
+        .pattern-grid {
+            background-image:
+                linear-gradient(var(--pattern-color, #fff) 2px, transparent 2px),
+                linear-gradient(90deg, var(--pattern-color, #fff) 2px, transparent 2px);
+            background-size: 20px 20px;
+        }
+
+        .pattern-stripes {
+            background-image: repeating-linear-gradient(
+                45deg,
+                var(--pattern-color, #fff),
+                var(--pattern-color, #fff) 10px,
+                transparent 10px,
+                transparent 20px
+            );
+        }
+
+        /* Design Screen */
+        #designScreen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3rem 2rem;
+        }
+
+        .options-container {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .option {
+            width: 80px;
+            height: 80px;
+            border: 3px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            position: relative;
+        }
+
+        .option:hover {
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            transform: scale(1.1);
+        }
+
+        .option.selected {
+            border-color: #ff6b9d;
+            box-shadow: 0 0 25px rgba(255, 107, 157, 0.8);
+        }
+
+        .color-option {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+        }
+
+        .shape-option {
+            width: 50px;
+            height: 60px;
+            border: 3px solid #333;
+            background: #ffd1dc;
+        }
+
+        .pattern-option {
+            width: 70px;
+            height: 70px;
+            border: 2px solid #333;
+        }
+
+        .nail-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+        }
+
+        .navigation {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 2rem;
+            pointer-events: none;
+        }
+
+        .nav-arrow {
+            font-size: 3rem;
+            color: #ff6b9d;
+            cursor: pointer;
+            pointer-events: all;
+            transition: all 0.3s ease;
+            user-select: none;
+            background: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-arrow:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-arrow.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .step-indicator {
+            font-size: 1.5rem;
+            color: #ff6b9d;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        /* Finale Screen */
+        #finaleScreen {
+            text-align: center;
+            position: relative;
+        }
+
+        #finaleScreen h1 {
+            font-size: 3rem;
+            color: #ff6b9d;
+            margin-bottom: 2rem;
+            animation: fadeInScale 0.8s ease-out;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Sparkles Animation */
+        .sparkle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #ffd700, transparent);
+            border-radius: 50%;
+            animation: sparkleAnimation 1.5s ease-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes sparkleAnimation {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5) rotate(180deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .fade-out {
+            animation: fadeOut 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .glow {
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+            }
+            50% {
+                filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Start Screen -->
+        <div id="startScreen">
+            <h1>Help me paint my nails!</h1>
+            <div class="hand">
+                <div class="finger">
+                    <div class="nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+                <div class="finger">
+                    <div class="nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+                <div class="finger">
+                    <div class="nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+                <div class="finger">
+                    <div class="nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+                <div class="finger">
+                    <div class="nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Design Screen -->
+        <div id="designScreen" class="hidden">
+            <div class="step-indicator" id="stepIndicator"></div>
+            <div class="options-container" id="optionsContainer"></div>
+            <div class="nail-center">
+                <div class="nail large" id="centerNail"></div>
+            </div>
+            <div class="navigation">
+                <div class="nav-arrow" id="prevArrow">&lt;</div>
+                <div class="nav-arrow" id="nextArrow">&gt;</div>
+            </div>
+        </div>
+
+        <!-- Finale Screen -->
+        <div id="finaleScreen" class="hidden">
+            <h1>Wow, thank you!</h1>
+            <div class="hand" id="finalHand">
+                <div class="finger">
+                    <div class="nail final-nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+                <div class="finger">
+                    <div class="nail final-nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+                <div class="finger">
+                    <div class="nail final-nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+                <div class="finger">
+                    <div class="nail final-nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+                <div class="finger">
+                    <div class="nail final-nail"></div>
+                    <div class="finger-segment"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State Management
+        const state = {
+            currentStep: 0,
+            shape: 'round',
+            color: '#ffd1dc',
+            pattern: 'none',
+            patternColor: '#ffffff',
+            colorPalette1: [],
+            colorPalette2: []
+        };
+
+        // Steps Configuration
+        const steps = [
+            {
+                name: 'Shape Selection',
+                type: 'shape',
+                options: ['round', 'square', 'oval']
+            },
+            {
+                name: 'Color Selection',
+                type: 'color',
+                options: 'random'
+            },
+            {
+                name: 'Pattern Selection',
+                type: 'pattern',
+                options: ['none', 'dots', 'grid', 'stripes']
+            },
+            {
+                name: 'Pattern Color',
+                type: 'patternColor',
+                options: 'random'
+            }
+        ];
+
+        // DOM Elements
+        const startScreen = document.getElementById('startScreen');
+        const designScreen = document.getElementById('designScreen');
+        const finaleScreen = document.getElementById('finaleScreen');
+        const centerNail = document.getElementById('centerNail');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const stepIndicator = document.getElementById('stepIndicator');
+        const prevArrow = document.getElementById('prevArrow');
+        const nextArrow = document.getElementById('nextArrow');
+
+        // Generate Random Colors
+        function generateRandomColors(count) {
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                const hue = Math.floor(Math.random() * 360);
+                const saturation = 60 + Math.floor(Math.random() * 40);
+                const lightness = 50 + Math.floor(Math.random() * 30);
+                colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+            }
+            return colors;
+        }
+
+        // Initialize Color Palettes
+        state.colorPalette1 = generateRandomColors(3);
+        state.colorPalette2 = generateRandomColors(3);
+
+        // Start the Experience
+        startScreen.addEventListener('click', () => {
+            startScreen.classList.add('fade-out');
+            setTimeout(() => {
+                startScreen.classList.add('hidden');
+                designScreen.classList.remove('hidden');
+                designScreen.classList.add('fade-in');
+                renderStep();
+            }, 500);
+        });
+
+        // Render Current Step
+        function renderStep() {
+            const step = steps[state.currentStep];
+            stepIndicator.textContent = step.name;
+            optionsContainer.innerHTML = '';
+
+            // Update navigation arrows
+            prevArrow.classList.toggle('disabled', state.currentStep === 0);
+            nextArrow.classList.toggle('disabled', state.currentStep === steps.length - 1);
+
+            // Render options based on step type
+            if (step.type === 'shape') {
+                renderShapeOptions();
+            } else if (step.type === 'color') {
+                renderColorOptions(state.colorPalette1);
+            } else if (step.type === 'pattern') {
+                renderPatternOptions();
+            } else if (step.type === 'patternColor') {
+                renderColorOptions(state.colorPalette2, true);
+            }
+
+            updateCenterNail();
+        }
+
+        // Render Shape Options
+        function renderShapeOptions() {
+            const shapes = ['round', 'square', 'oval'];
+            shapes.forEach(shape => {
+                const option = document.createElement('div');
+                option.className = 'option';
+                if (state.shape === shape) option.classList.add('selected');
+
+                const shapePreview = document.createElement('div');
+                shapePreview.className = `shape-option ${shape}`;
+                option.appendChild(shapePreview);
+
+                option.addEventListener('click', () => {
+                    state.shape = shape;
+                    renderStep();
+                });
+
+                optionsContainer.appendChild(option);
+            });
+        }
+
+        // Render Color Options
+        function renderColorOptions(palette, isPatternColor = false) {
+            palette.forEach(color => {
+                const option = document.createElement('div');
+                option.className = 'option color-option';
+                option.style.background = color;
+
+                const currentColor = isPatternColor ? state.patternColor : state.color;
+                if (currentColor === color) option.classList.add('selected');
+
+                option.addEventListener('click', () => {
+                    if (isPatternColor) {
+                        state.patternColor = color;
+                    } else {
+                        state.color = color;
+                    }
+                    renderStep();
+                });
+
+                optionsContainer.appendChild(option);
+            });
+        }
+
+        // Render Pattern Options
+        function renderPatternOptions() {
+            const patterns = [
+                { name: 'none', label: 'None' },
+                { name: 'dots', label: 'Polka Dots' },
+                { name: 'grid', label: 'Grid' },
+                { name: 'stripes', label: 'Stripes' }
+            ];
+
+            patterns.forEach(({ name, label }) => {
+                const option = document.createElement('div');
+                option.className = 'option';
+                if (state.pattern === name) option.classList.add('selected');
+
+                const patternPreview = document.createElement('div');
+                patternPreview.className = 'pattern-option';
+                patternPreview.style.background = '#ffd1dc';
+
+                if (name !== 'none') {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'nail-pattern pattern-' + name;
+                    overlay.style.setProperty('--pattern-color', '#333');
+                    patternPreview.appendChild(overlay);
+                }
+
+                option.appendChild(patternPreview);
+
+                option.addEventListener('click', () => {
+                    state.pattern = name;
+                    renderStep();
+                });
+
+                optionsContainer.appendChild(option);
+            });
+        }
+
+        // Update Center Nail
+        function updateCenterNail() {
+            centerNail.className = `nail large ${state.shape}`;
+            centerNail.style.background = state.color;
+            centerNail.innerHTML = '';
+
+            if (state.pattern !== 'none') {
+                const patternOverlay = document.createElement('div');
+                patternOverlay.className = `nail-pattern pattern-${state.pattern}`;
+                patternOverlay.style.setProperty('--pattern-color', state.patternColor);
+                centerNail.appendChild(patternOverlay);
+            }
+        }
+
+        // Navigation
+        prevArrow.addEventListener('click', () => {
+            if (state.currentStep > 0) {
+                state.currentStep--;
+                renderStep();
+            }
+        });
+
+        nextArrow.addEventListener('click', () => {
+            if (state.currentStep < steps.length - 1) {
+                state.currentStep++;
+                renderStep();
+            } else {
+                showFinale();
+            }
+        });
+
+        // Show Finale
+        function showFinale() {
+            designScreen.classList.add('fade-out');
+            setTimeout(() => {
+                designScreen.classList.add('hidden');
+                finaleScreen.classList.remove('hidden');
+                finaleScreen.classList.add('fade-in');
+
+                // Apply design to all nails
+                const finalNails = document.querySelectorAll('.final-nail');
+                finalNails.forEach(nail => {
+                    nail.className = `nail final-nail ${state.shape}`;
+                    nail.style.background = state.color;
+
+                    if (state.pattern !== 'none') {
+                        const patternOverlay = document.createElement('div');
+                        patternOverlay.className = `nail-pattern pattern-${state.pattern}`;
+                        patternOverlay.style.setProperty('--pattern-color', state.patternColor);
+                        nail.appendChild(patternOverlay);
+                    }
+                });
+
+                // Add sparkles
+                createSparkles();
+
+                // Add glow to final hand
+                document.getElementById('finalHand').classList.add('glow');
+            }, 500);
+        }
+
+        // Create Sparkles
+        function createSparkles() {
+            const sparkleCount = 20;
+            for (let i = 0; i < sparkleCount; i++) {
+                setTimeout(() => {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.style.left = Math.random() * 100 + '%';
+                    sparkle.style.top = Math.random() * 100 + '%';
+                    sparkle.style.animationDelay = Math.random() * 0.5 + 's';
+                    finaleScreen.appendChild(sparkle);
+
+                    setTimeout(() => sparkle.remove(), 2000);
+                }, i * 100);
+            }
+        }
+    </script>
+</body>
+</html>
