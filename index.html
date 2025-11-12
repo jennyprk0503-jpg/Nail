@@ -625,7 +625,7 @@
 
             // Update navigation arrows
             prevArrow.classList.toggle('disabled', state.currentStep === 0);
-            nextArrow.classList.toggle('disabled', state.currentStep === steps.length - 1);
+            // Don't disable next arrow - it should allow progression to finale
 
             // Render options based on step type
             if (step.type === 'shape') {
